@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Space Council - 3D Base Builder</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="canvas"></canvas>
+
+      <!-- Mode Selector -->
+      <div id="mode-selector">
+        <button class="mode-btn" data-mode="select">Select Mode</button>
+        <button class="mode-btn active" data-mode="add">Add Mode</button>
+      </div>
+
+      <!-- Location Selector -->
+      <div id="location-selector">
+        <button class="location-btn active" data-location="earth">
+          Earth Campus
+        </button>
+        <button class="location-btn" data-location="station">
+          Space Station
+        </button>
+        <button class="location-btn" data-location="moon">Lunar Base</button>
+        <button class="location-btn" data-location="mars">Mars Base</button>
+        <button class="location-btn" data-location="asteroid">
+          Asteroid Mining
+        </button>
+      </div>
+
+      <!-- Building Palette -->
+      <div id="building-palette" class="show">
+        <h3>Available Buildings</h3>
+        <div id="building-list"></div>
+      </div>
+
+      <!-- Info Panel -->
+      <div id="info-panel">
+        <h3>Base Statistics</h3>
+        <div class="info-row">
+          <span class="info-label">Location:</span>
+          <span class="info-value" id="current-location">Earth Campus</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Buildings:</span>
+          <span class="info-value" id="building-count">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Power Usage:</span>
+          <span class="info-value" id="power-usage">0 MW</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Population:</span>
+          <span class="info-value" id="population">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Grid Size:</span>
+          <span class="info-value" id="grid-size">50x50</span>
+        </div>
+      </div>
+
+      <!-- Building Menu -->
+      <div id="building-menu">
+        <h3>
+          <span id="selected-building-name">Building Options</span>
+          <span class="close-btn" id="close-menu-btn">×</span>
+        </h3>
+        <div class="building-info" id="building-info"></div>
+        <div id="menu-options"></div>
+      </div>
+
+      <!-- Controls -->
+      <div id="controls">
+        <button class="control-btn" id="rotate-btn">Rotate Building (R)</button>
+        <button class="control-btn danger" id="delete-btn">
+          Delete Mode (D)
+        </button>
+        <div class="toggle-container">
+          <span>Grid:</span>
+          <div class="toggle-switch active" id="grid-toggle">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+        <button class="control-btn" id="reset-camera">Reset Camera</button>
+      </div>
+
+      <!-- Mode Instructions -->
+      <div id="mode-instructions" class="add-mode">
+        <strong>Add Mode:</strong> Select a building from the palette and click
+        to place it.
+      </div>
+
+      <!-- Loading Screen -->
+      <div id="loading">
+        <div class="loader"></div>
+        <p>Initializing Base Builder...</p>
+      </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Game Scripts -->
+    <script src="js/config/constants.js"></script>
+    <script src="js/config/buildingTypes.js"></script>
+    <script src="js/config/buildingMenuOptions.js"></script>
+    <script src="js/config/environments.js"></script>
+
+    <script src="js/core/SceneManager.js"></script>
+    <script src="js/core/CameraController.js"></script>
+    <script src="js/core/InputManager.js"></script>
+
+    <script src="js/objects/Building.js"></script>
+    <script src="js/objects/Tree.js"></script>
+    <script src="js/objects/Environment.js"></script>
+
+    <script src="js/ui/UIManager.js"></script>
+    <script src="js/ui/BuildingMenu.js"></script>
+    <script src="js/ui/BuildingPalette.js"></script>
+    <script src="js/ui/InfoPanel.js"></script>
+
+    <script src="js/systems/BuildingSystem.js"></script>
+    <script src="js/systems/SelectionSystem.js"></script>
+    <script src="js/systems/PlacementSystem.js"></script>
+
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
