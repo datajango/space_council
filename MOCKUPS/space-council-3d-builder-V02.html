@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Space Council - 3D Base Builder</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #0d0f19;
+        color: #f5f7fa;
+        overflow: hidden;
+      }
+
+      #container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+
+      #canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* Location Selector */
+      #location-selector {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(27, 42, 73, 0.95);
+        border: 2px solid #37b3a9;
+        border-radius: 12px;
+        padding: 10px;
+        display: flex;
+        gap: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .location-btn {
+        padding: 10px 20px;
+        background: #1b2a49;
+        border: 2px solid #37b3a9;
+        border-radius: 8px;
+        color: #f5f7fa;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+
+      .location-btn:hover {
+        background: #37b3a9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(55, 179, 169, 0.4);
+      }
+
+      .location-btn.active {
+        background: #37b3a9;
+        box-shadow: 0 0 20px rgba(55, 179, 169, 0.6);
+      }
+
+      /* Building Palette */
+      #building-palette {
+        position: absolute;
+        left: 20px;
+        top: 100px;
+        background: rgba(27, 42, 73, 0.95);
+        border: 2px solid #37b3a9;
+        border-radius: 12px;
+        padding: 20px;
+        width: 280px;
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      #building-palette h3 {
+        color: #f2c94c;
+        margin-bottom: 15px;
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .building-item {
+        background: #1b2a49;
+        border: 2px solid #333a56;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .building-item:hover {
+        border-color: #37b3a9;
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(55, 179, 169, 0.3);
+      }
+
+      .building-item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .building-item.disabled:hover {
+        transform: none;
+        border-color: #333a56;
+      }
+
+      .building-name {
+        font-weight: 600;
+        color: #f5f7fa;
+        margin-bottom: 4px;
+      }
+
+      .building-desc {
+        font-size: 12px;
+        color: #7a8094;
+        line-height: 1.4;
+      }
+
+      /* Building Menu */
+      #building-menu {
+        position: absolute;
+        right: 20px;
+        top: 320px;
+        background: rgba(27, 42, 73, 0.95);
+        border: 2px solid #f2c94c;
+        border-radius: 12px;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+
+      #building-menu h3 {
+        color: #f2c94c;
+        margin-bottom: 15px;
+        font-size: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #building-menu .close-btn {
+        cursor: pointer;
+        font-size: 24px;
+        color: #7a8094;
+        transition: color 0.3s ease;
+      }
+
+      #building-menu .close-btn:hover {
+        color: #f5f7fa;
+      }
+
+      .menu-option {
+        background: #1b2a49;
+        border: 2px solid #333a56;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .menu-option:hover {
+        border-color: #37b3a9;
+        transform: translateX(3px);
+        box-shadow: 0 2px 8px rgba(55, 179, 169, 0.3);
+      }
+
+      .menu-option-title {
+        font-weight: 600;
+        color: #f5f7fa;
+        margin-bottom: 4px;
+      }
+
+      .menu-option-desc {
+        font-size: 12px;
+        color: #7a8094;
+      }
+
+      .building-info {
+        background: #0d0f19;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 15px;
+      }
+
+      .building-info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 14px;
+      }
+
+      .building-info-label {
+        color: #7a8094;
+      }
+
+      .building-info-value {
+        color: #37b3a9;
+        font-weight: 600;
+      }
+
+      /* Info Panel */
+      #info-panel {
+        position: absolute;
+        right: 20px;
+        top: 100px;
+        background: rgba(27, 42, 73, 0.95);
+        border: 2px solid #37b3a9;
+        border-radius: 12px;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      #info-panel h3 {
+        color: #f2c94c;
+        margin-bottom: 15px;
+        font-size: 18px;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(122, 128, 148, 0.2);
+      }
+
+      .info-label {
+        color: #7a8094;
+        font-size: 14px;
+      }
+
+      .info-value {
+        color: #f5f7fa;
+        font-weight: 600;
+      }
+
+      /* Controls */
+      #controls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(27, 42, 73, 0.95);
+        border: 2px solid #37b3a9;
+        border-radius: 12px;
+        padding: 15px 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .control-btn {
+        padding: 8px 16px;
+        background: #1b2a49;
+        border: 2px solid #37b3a9;
+        border-radius: 6px;
+        color: #f5f7fa;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .control-btn:hover {
+        background: #37b3a9;
+        transform: translateY(-2px);
+      }
+
+      .control-btn.danger {
+        border-color: #e74c3c;
+      }
+
+      .control-btn.danger:hover {
+        background: #e74c3c;
+      }
+
+      /* Grid Toggle */
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .toggle-switch {
+        width: 50px;
+        height: 26px;
+        background: #333a56;
+        border-radius: 13px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .toggle-switch.active {
+        background: #37b3a9;
+      }
+
+      .toggle-slider {
+        width: 22px;
+        height: 22px;
+        background: #f5f7fa;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.3s ease;
+      }
+
+      .toggle-switch.active .toggle-slider {
+        transform: translateX(24px);
+      }
+
+      /* Loading Screen */
+      #loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+
+      .loader {
+        width: 60px;
+        height: 60px;
+        border: 3px solid #333a56;
+        border-top: 3px solid #37b3a9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #1b2a49;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #37b3a9;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #f2c94c;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="canvas"></canvas>
+
+      <!-- Location Selector -->
+      <div id="location-selector">
+        <button class="location-btn active" data-location="earth">
+          Earth Campus
+        </button>
+        <button class="location-btn" data-location="station">
+          Space Station
+        </button>
+        <button class="location-btn" data-location="moon">Lunar Base</button>
+        <button class="location-btn" data-location="mars">Mars Base</button>
+        <button class="location-btn" data-location="asteroid">
+          Asteroid Mining
+        </button>
+      </div>
+
+      <!-- Building Palette -->
+      <div id="building-palette">
+        <h3>Available Buildings</h3>
+        <div id="building-list"></div>
+      </div>
+
+      <!-- Info Panel -->
+      <div id="info-panel">
+        <h3>Base Statistics</h3>
+        <div class="info-row">
+          <span class="info-label">Location:</span>
+          <span class="info-value" id="current-location">Earth Campus</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Buildings:</span>
+          <span class="info-value" id="building-count">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Power Usage:</span>
+          <span class="info-value" id="power-usage">0 MW</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Population:</span>
+          <span class="info-value" id="population">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Grid Size:</span>
+          <span class="info-value" id="grid-size">50x50</span>
+        </div>
+      </div>
+
+      <!-- Building Menu -->
+      <div id="building-menu">
+        <h3>
+          <span id="selected-building-name">Building Options</span>
+          <span class="close-btn" onclick="closeMenu()">×</span>
+        </h3>
+        <div class="building-info" id="building-info"></div>
+        <div id="menu-options"></div>
+      </div>
+
+      <!-- Controls -->
+      <div id="controls">
+        <button class="control-btn" id="rotate-btn">Rotate Building (R)</button>
+        <button class="control-btn danger" id="delete-btn">
+          Delete Mode (D)
+        </button>
+        <div class="toggle-container">
+          <span>Grid:</span>
+          <div class="toggle-switch active" id="grid-toggle">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+        <button class="control-btn" id="reset-camera">Reset Camera</button>
+      </div>
+
+      <!-- Loading Screen -->
+      <div id="loading">
+        <div class="loader"></div>
+        <p>Initializing Base Builder...</p>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      // Building menu options for each building type
+      const buildingMenuOptions = {
+        admin: [
+          { id: "hire", title: "Hire Staff", desc: "Recruit new personnel" },
+          {
+            id: "budget",
+            title: "Manage Budget",
+            desc: "Allocate agency funds",
+          },
+          {
+            id: "missions",
+            title: "Review Missions",
+            desc: "Check mission status",
+          },
+          {
+            id: "upgrade",
+            title: "Upgrade Facility",
+            desc: "Expand admin capabilities",
+          },
+        ],
+        launch: [
+          {
+            id: "schedule",
+            title: "Launch Schedule",
+            desc: "Plan upcoming launches",
+          },
+          {
+            id: "prep",
+            title: "Prepare Vehicle",
+            desc: "Ready rocket for launch",
+          },
+          {
+            id: "fuel",
+            title: "Fuel Management",
+            desc: "Monitor propellant levels",
+          },
+          {
+            id: "abort",
+            title: "Emergency Systems",
+            desc: "Configure abort procedures",
+          },
+        ],
+        research: [
+          {
+            id: "projects",
+            title: "Research Projects",
+            desc: "View active experiments",
+          },
+          {
+            id: "assign",
+            title: "Assign Scientists",
+            desc: "Allocate research teams",
+          },
+          {
+            id: "tech",
+            title: "Technology Tree",
+            desc: "Unlock new technologies",
+          },
+          {
+            id: "data",
+            title: "Analyze Data",
+            desc: "Review research findings",
+          },
+        ],
+        habitat: [
+          {
+            id: "crew",
+            title: "Crew Quarters",
+            desc: "Manage living assignments",
+          },
+          { id: "morale", title: "Recreation", desc: "Boost crew morale" },
+          {
+            id: "capacity",
+            title: "Expand Capacity",
+            desc: "Add more living space",
+          },
+          { id: "life", title: "Life Support", desc: "Monitor air and water" },
+        ],
+        power: [
+          {
+            id: "output",
+            title: "Power Output",
+            desc: "Adjust generation levels",
+          },
+          { id: "maintain", title: "Maintenance", desc: "Schedule repairs" },
+          {
+            id: "backup",
+            title: "Backup Systems",
+            desc: "Configure redundancy",
+          },
+          { id: "efficiency", title: "Optimize", desc: "Improve efficiency" },
+        ],
+        comms: [
+          {
+            id: "transmit",
+            title: "Transmissions",
+            desc: "Send/receive messages",
+          },
+          { id: "track", title: "Tracking", desc: "Monitor spacecraft" },
+          {
+            id: "relay",
+            title: "Relay Network",
+            desc: "Configure connections",
+          },
+          { id: "upgrade", title: "Upgrade Antennas", desc: "Increase range" },
+        ],
+        hangar: [
+          {
+            id: "vehicles",
+            title: "Vehicle Bay",
+            desc: "Manage rovers and craft",
+          },
+          { id: "repair", title: "Repair Shop", desc: "Fix damaged equipment" },
+          {
+            id: "inventory",
+            title: "Parts Inventory",
+            desc: "Track spare parts",
+          },
+          { id: "deploy", title: "Deploy Vehicle", desc: "Send out missions" },
+        ],
+        storage: [
+          {
+            id: "inventory",
+            title: "Inventory",
+            desc: "View stored resources",
+          },
+          { id: "transfer", title: "Transfer Goods", desc: "Move supplies" },
+          {
+            id: "capacity",
+            title: "Expand Storage",
+            desc: "Increase capacity",
+          },
+          { id: "logistics", title: "Supply Chain", desc: "Manage deliveries" },
+        ],
+        greenhouse: [
+          { id: "crops", title: "Crop Management", desc: "Plant and harvest" },
+          {
+            id: "oxygen",
+            title: "O2 Production",
+            desc: "Monitor oxygen output",
+          },
+          {
+            id: "research",
+            title: "Botanical Research",
+            desc: "Develop new strains",
+          },
+          { id: "expand", title: "Add Modules", desc: "Increase growing area" },
+        ],
+        solar: [
+          { id: "angle", title: "Panel Angle", desc: "Optimize sun tracking" },
+          {
+            id: "clean",
+            title: "Clean Panels",
+            desc: "Remove dust and debris",
+          },
+          {
+            id: "battery",
+            title: "Battery Storage",
+            desc: "Manage power reserves",
+          },
+          { id: "expand", title: "Add Arrays", desc: "Install more panels" },
+        ],
+        training: [
+          {
+            id: "programs",
+            title: "Training Programs",
+            desc: "Design curricula",
+          },
+          {
+            id: "simulate",
+            title: "Run Simulations",
+            desc: "Practice missions",
+          },
+          { id: "evaluate", title: "Evaluate Crew", desc: "Test competencies" },
+          {
+            id: "specialize",
+            title: "Specializations",
+            desc: "Advanced training",
+          },
+        ],
+        medical: [
+          { id: "patients", title: "Patient Care", desc: "Treat crew members" },
+          {
+            id: "supplies",
+            title: "Medical Supplies",
+            desc: "Manage inventory",
+          },
+          {
+            id: "emergency",
+            title: "Emergency Response",
+            desc: "Trauma procedures",
+          },
+          {
+            id: "research",
+            title: "Medical Research",
+            desc: "Study space medicine",
+          },
+        ],
+        engineering: [
+          { id: "fabricate", title: "Fabrication", desc: "Build components" },
+          { id: "repair", title: "Repairs", desc: "Fix equipment" },
+          { id: "design", title: "Design Lab", desc: "Create blueprints" },
+          { id: "tools", title: "Tool Management", desc: "Maintain workshop" },
+        ],
+        observatory: [
+          {
+            id: "observe",
+            title: "Observations",
+            desc: "Schedule telescope time",
+          },
+          { id: "analyze", title: "Data Analysis", desc: "Process images" },
+          { id: "discover", title: "Discoveries", desc: "Catalog findings" },
+          { id: "calibrate", title: "Calibration", desc: "Align instruments" },
+        ],
+        // Space station specific
+        command: [
+          {
+            id: "control",
+            title: "Station Control",
+            desc: "Monitor all systems",
+          },
+          { id: "orbit", title: "Orbital Adjust", desc: "Maintain altitude" },
+          { id: "dock", title: "Docking Control", desc: "Guide spacecraft" },
+          {
+            id: "emergency",
+            title: "Emergency Ops",
+            desc: "Crisis management",
+          },
+        ],
+        // Mars/Moon specific
+        colony: [
+          { id: "expand", title: "Expand Colony", desc: "Add new sections" },
+          {
+            id: "terraform",
+            title: "Terraforming",
+            desc: "Atmospheric projects",
+          },
+          { id: "govern", title: "Governance", desc: "Colony administration" },
+          {
+            id: "trade",
+            title: "Trade Routes",
+            desc: "Interplanetary commerce",
+          },
+        ],
+        // Asteroid specific
+        mining_rig: [
+          { id: "drill", title: "Drilling Ops", desc: "Extract resources" },
+          { id: "scan", title: "Mineral Scan", desc: "Analyze composition" },
+          { id: "process", title: "Processing", desc: "Refine raw ore" },
+          { id: "transport", title: "Shipping", desc: "Send to Earth" },
+        ],
+      };
+
+      // Get menu options for building type
+      function getBuildingMenuOptions(buildingId) {
+        return (
+          buildingMenuOptions[buildingId] || [
+            { id: "info", title: "Building Info", desc: "View statistics" },
+            { id: "upgrade", title: "Upgrade", desc: "Improve building" },
+            { id: "demolish", title: "Demolish", desc: "Remove building" },
+          ]
+        );
+      }
+
+      // Building definitions for each location
+      const buildingTypes = {
+        earth: [
+          {
+            id: "admin",
+            name: "Admin Building",
+            desc: "Central headquarters for agency operations",
+            size: 4,
+            power: 5,
+            capacity: 50,
+          },
+          {
+            id: "launch",
+            name: "Launch Pad",
+            desc: "Rocket assembly and launch complex",
+            size: 6,
+            power: 10,
+            capacity: 20,
+          },
+          {
+            id: "research",
+            name: "Research Lab",
+            desc: "Scientific R&D facility",
+            size: 3,
+            power: 8,
+            capacity: 30,
+          },
+          {
+            id: "habitat",
+            name: "Habitat Module",
+            desc: "Crew living quarters",
+            size: 2,
+            power: 3,
+            capacity: 40,
+          },
+          {
+            id: "power",
+            name: "Power Generator",
+            desc: "Primary energy source",
+            size: 3,
+            power: -50,
+            capacity: 5,
+          },
+          {
+            id: "comms",
+            name: "Communications Array",
+            desc: "High-gain antenna network",
+            size: 2,
+            power: 4,
+            capacity: 10,
+          },
+          {
+            id: "hangar",
+            name: "Vehicle Hangar",
+            desc: "Vehicle storage and maintenance",
+            size: 5,
+            power: 6,
+            capacity: 15,
+          },
+          {
+            id: "storage",
+            name: "Storage Depot",
+            desc: "Resource warehousing facility",
+            size: 4,
+            power: 2,
+            capacity: 5,
+          },
+          {
+            id: "greenhouse",
+            name: "Greenhouse",
+            desc: "Food and oxygen production",
+            size: 3,
+            power: 4,
+            capacity: 10,
+          },
+          {
+            id: "solar",
+            name: "Solar Farm",
+            desc: "Renewable energy array",
+            size: 4,
+            power: -30,
+            capacity: 2,
+          },
+          {
+            id: "training",
+            name: "Training Facility",
+            desc: "Crew training center",
+            size: 3,
+            power: 5,
+            capacity: 25,
+          },
+          {
+            id: "medical",
+            name: "Medical Center",
+            desc: "Healthcare facility",
+            size: 3,
+            power: 6,
+            capacity: 20,
+          },
+          {
+            id: "engineering",
+            name: "Engineering Bay",
+            desc: "Equipment workshop",
+            size: 4,
+            power: 7,
+            capacity: 15,
+          },
+          {
+            id: "observatory",
+            name: "Observatory Tower",
+            desc: "Space observation facility",
+            size: 2,
+            power: 5,
+            capacity: 10,
+          },
+        ],
+        station: [
+          {
+            id: "command",
+            name: "Command Module",
+            desc: "Station control center",
+            size: 2,
+            power: 4,
+            capacity: 10,
+          },
+          {
+            id: "lab",
+            name: "Science Lab",
+            desc: "Zero-G research facility",
+            size: 2,
+            power: 6,
+            capacity: 15,
+          },
+          {
+            id: "crew",
+            name: "Crew Quarters",
+            desc: "Living space for astronauts",
+            size: 2,
+            power: 3,
+            capacity: 20,
+          },
+          {
+            id: "docking",
+            name: "Docking Port",
+            desc: "Spacecraft berthing interface",
+            size: 1,
+            power: 2,
+            capacity: 5,
+          },
+          {
+            id: "solar_panel",
+            name: "Solar Panel Array",
+            desc: "Power generation system",
+            size: 3,
+            power: -20,
+            capacity: 0,
+          },
+          {
+            id: "storage_module",
+            name: "Storage Module",
+            desc: "Supply storage compartment",
+            size: 2,
+            power: 1,
+            capacity: 0,
+          },
+          {
+            id: "cupola",
+            name: "Observation Cupola",
+            desc: "Panoramic viewing module",
+            size: 1,
+            power: 2,
+            capacity: 4,
+          },
+          {
+            id: "airlock",
+            name: "Airlock",
+            desc: "EVA access point",
+            size: 1,
+            power: 3,
+            capacity: 2,
+          },
+        ],
+        moon: [
+          {
+            id: "habitat",
+            name: "Lunar Habitat",
+            desc: "Pressurized living quarters",
+            size: 3,
+            power: 4,
+            capacity: 30,
+          },
+          {
+            id: "research",
+            name: "Research Lab",
+            desc: "Lunar science facility",
+            size: 3,
+            power: 6,
+            capacity: 20,
+          },
+          {
+            id: "power",
+            name: "Nuclear Reactor",
+            desc: "Ruggedized power plant",
+            size: 3,
+            power: -40,
+            capacity: 5,
+          },
+          {
+            id: "comms",
+            name: "Relay Station",
+            desc: "Earth-Moon communications",
+            size: 2,
+            power: 5,
+            capacity: 5,
+          },
+          {
+            id: "greenhouse",
+            name: "Sealed Greenhouse",
+            desc: "Pressurized agriculture",
+            size: 3,
+            power: 5,
+            capacity: 10,
+          },
+          {
+            id: "solar",
+            name: "Solar Array",
+            desc: "Low-angle panel system",
+            size: 4,
+            power: -20,
+            capacity: 2,
+          },
+          {
+            id: "storage",
+            name: "Supply Depot",
+            desc: "Resource storage",
+            size: 3,
+            power: 2,
+            capacity: 5,
+          },
+          {
+            id: "engineering",
+            name: "Maintenance Bay",
+            desc: "Equipment servicing",
+            size: 3,
+            power: 5,
+            capacity: 10,
+          },
+          {
+            id: "medical",
+            name: "Med Bay",
+            desc: "Emergency medical facility",
+            size: 2,
+            power: 4,
+            capacity: 10,
+          },
+        ],
+        mars: [
+          {
+            id: "colony",
+            name: "Colony Hub",
+            desc: "Main habitation complex",
+            size: 4,
+            power: 6,
+            capacity: 50,
+          },
+          {
+            id: "research",
+            name: "Mars Lab",
+            desc: "Planetary research center",
+            size: 3,
+            power: 7,
+            capacity: 25,
+          },
+          {
+            id: "reactor",
+            name: "Fusion Reactor",
+            desc: "High-output power system",
+            size: 4,
+            power: -60,
+            capacity: 8,
+          },
+          {
+            id: "comms",
+            name: "Deep Space Relay",
+            desc: "Interplanetary communications",
+            size: 2,
+            power: 6,
+            capacity: 5,
+          },
+          {
+            id: "farm",
+            name: "Hydroponics Farm",
+            desc: "Advanced food production",
+            size: 4,
+            power: 6,
+            capacity: 15,
+          },
+          {
+            id: "solar",
+            name: "Dust-Resistant Solar",
+            desc: "Hardened solar panels",
+            size: 4,
+            power: -15,
+            capacity: 2,
+          },
+          {
+            id: "storage",
+            name: "Resource Silo",
+            desc: "Large-scale storage",
+            size: 3,
+            power: 2,
+            capacity: 5,
+          },
+          {
+            id: "engineering",
+            name: "Fabrication Plant",
+            desc: "Manufacturing facility",
+            size: 4,
+            power: 8,
+            capacity: 20,
+          },
+          {
+            id: "medical",
+            name: "Hospital Module",
+            desc: "Full medical facility",
+            size: 3,
+            power: 5,
+            capacity: 15,
+          },
+          {
+            id: "observatory",
+            name: "Mars Observatory",
+            desc: "Atmospheric research",
+            size: 2,
+            power: 4,
+            capacity: 10,
+          },
+        ],
+        asteroid: [
+          {
+            id: "mining_rig",
+            name: "Mining Rig",
+            desc: "Resource extraction platform",
+            size: 5,
+            power: 15,
+            capacity: 10,
+          },
+          {
+            id: "refinery",
+            name: "Ore Refinery",
+            desc: "Material processing plant",
+            size: 4,
+            power: 12,
+            capacity: 15,
+          },
+          {
+            id: "habitat",
+            name: "Miner Quarters",
+            desc: "Crew accommodation",
+            size: 2,
+            power: 3,
+            capacity: 20,
+          },
+          {
+            id: "power",
+            name: "RTG Power Unit",
+            desc: "Radioisotope generator",
+            size: 2,
+            power: -25,
+            capacity: 3,
+          },
+          {
+            id: "storage",
+            name: "Ore Storage",
+            desc: "Raw material depot",
+            size: 4,
+            power: 1,
+            capacity: 0,
+          },
+          {
+            id: "docking",
+            name: "Transport Dock",
+            desc: "Cargo ship berth",
+            size: 3,
+            power: 4,
+            capacity: 5,
+          },
+          {
+            id: "comms",
+            name: "Beacon Tower",
+            desc: "Navigation and comms",
+            size: 1,
+            power: 3,
+            capacity: 3,
+          },
+          {
+            id: "repair",
+            name: "Repair Bay",
+            desc: "Equipment maintenance",
+            size: 3,
+            power: 5,
+            capacity: 10,
+          },
+        ],
+      };
+
+      // Environment settings for each location
+      const environments = {
+        earth: {
+          groundColor: 0x3a7d44,
+          skyColor: 0x87ceeb,
+          gridSize: 50,
+          gridDivisions: 50,
+          cameraDistance: 50,
+        },
+        station: {
+          groundColor: 0x1a1a2e,
+          skyColor: 0x000000,
+          gridSize: 30,
+          gridDivisions: 30,
+          cameraDistance: 40,
+        },
+        moon: {
+          groundColor: 0x8b8680,
+          skyColor: 0x000000,
+          gridSize: 40,
+          gridDivisions: 40,
+          cameraDistance: 45,
+        },
+        mars: {
+          groundColor: 0xc1440e,
+          skyColor: 0x4a2c2a,
+          gridSize: 45,
+          gridDivisions: 45,
+          cameraDistance: 48,
+        },
+        asteroid: {
+          groundColor: 0x4a4a4a,
+          skyColor: 0x000000,
+          gridSize: 35,
+          gridDivisions: 35,
+          cameraDistance: 42,
+        },
+      };
+
+      // Global variables
+      let scene, camera, renderer;
+      let ground, gridHelper;
+      let currentLocation = "earth";
+      let placedBuildings = [];
+      let placedTrees = [];
+      let ghostBuilding = null;
+      let selectedBuildingType = null;
+      let selectedBuilding = null;
+      let selectionOutline = null;
+      let deleteMode = false;
+      let showGrid = true;
+      let raycaster, mouse;
+      let controls;
+      let labelRenderer;
+
+      // Initialize Three.js
+      function init() {
+        // Scene setup
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x000000, 50, 200);
+
+        // Camera setup
+        camera = new THREE.PerspectiveCamera(
+          60,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+
+        // Renderer setup
+        renderer = new THREE.WebGLRenderer({
+          canvas: document.getElementById("canvas"),
+          antialias: true,
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Raycaster and mouse for interaction
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+
+        // Basic orbit controls simulation
+        controls = {
+          rotationX: -Math.PI / 6,
+          rotationY: 0,
+          distance: 50,
+          target: new THREE.Vector3(0, 0, 0),
+          update: function () {
+            camera.position.x =
+              Math.sin(this.rotationY) *
+              Math.cos(this.rotationX) *
+              this.distance;
+            camera.position.y = Math.sin(this.rotationX) * this.distance + 20;
+            camera.position.z =
+              Math.cos(this.rotationY) *
+              Math.cos(this.rotationX) *
+              this.distance;
+            camera.lookAt(this.target);
+          },
+        };
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(50, 100, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.camera.left = -50;
+        directionalLight.shadow.camera.right = 50;
+        directionalLight.shadow.camera.top = 50;
+        directionalLight.shadow.camera.bottom = -50;
+        directionalLight.shadow.camera.near = 0.1;
+        directionalLight.shadow.camera.far = 200;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        scene.add(directionalLight);
+
+        // Initialize environment
+        createEnvironment(currentLocation);
+        updateBuildingPalette();
+
+        // Add trees to Earth campus
+        if (currentLocation === "earth") {
+          addTreesToEarth();
+        }
+
+        // Event listeners
+        setupEventListeners();
+
+        // Hide loading screen
+        document.getElementById("loading").style.display = "none";
+
+        // Start animation loop
+        animate();
+      }
+
+      // Create environment based on location
+      function createEnvironment(location) {
+        const env = environments[location];
+
+        // Clear existing environment
+        if (ground) scene.remove(ground);
+        if (gridHelper) scene.remove(gridHelper);
+
+        // Create ground
+        const groundGeometry = new THREE.PlaneGeometry(
+          env.gridSize * 2,
+          env.gridSize * 2
+        );
+        const groundMaterial = new THREE.MeshPhongMaterial({
+          color: env.groundColor,
+          depthWrite: true,
+        });
+        ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Create grid
+        gridHelper = new THREE.GridHelper(
+          env.gridSize,
+          env.gridDivisions,
+          0x37b3a9,
+          0x1b2a49
+        );
+        gridHelper.visible = showGrid;
+        scene.add(gridHelper);
+
+        // Set sky color
+        if (
+          location === "station" ||
+          location === "moon" ||
+          location === "asteroid"
+        ) {
+          // Space environments - add stars
+          createStarfield();
+          renderer.setClearColor(0x000000);
+        } else if (location === "earth") {
+          renderer.setClearColor(env.skyColor);
+        } else if (location === "mars") {
+          renderer.setClearColor(env.skyColor);
+        }
+
+        // Update camera distance
+        controls.distance = env.cameraDistance;
+        controls.update();
+
+        // Update info panel
+        document.getElementById("current-location").textContent =
+          location.charAt(0).toUpperCase() +
+          location.slice(1) +
+          (location === "earth"
+            ? " Campus"
+            : location === "station"
+            ? " Station"
+            : " Base");
+        document.getElementById(
+          "grid-size"
+        ).textContent = `${env.gridSize}x${env.gridSize}`;
+      }
+
+      // Create tree mesh
+      function createTreeMesh(x, z) {
+        const treeGroup = new THREE.Group();
+
+        // Tree trunk
+        const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+        const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 });
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+        trunk.position.y = 1;
+        trunk.castShadow = true;
+        trunk.receiveShadow = true;
+
+        // Tree foliage (3 spheres for fuller look)
+        const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 6);
+        const foliageMaterial = new THREE.MeshPhongMaterial({
+          color: 0x228b22,
+        });
+
+        const foliage1 = new THREE.Mesh(foliageGeometry, foliageMaterial);
+        foliage1.position.y = 3;
+        foliage1.castShadow = true;
+        foliage1.receiveShadow = true;
+
+        const foliage2 = new THREE.Mesh(foliageGeometry, foliageMaterial);
+        foliage2.position.set(0.5, 3.5, 0.5);
+        foliage2.scale.set(0.8, 0.8, 0.8);
+        foliage2.castShadow = true;
+
+        const foliage3 = new THREE.Mesh(foliageGeometry, foliageMaterial);
+        foliage3.position.set(-0.5, 3.5, -0.5);
+        foliage3.scale.set(0.7, 0.7, 0.7);
+        foliage3.castShadow = true;
+
+        treeGroup.add(trunk);
+        treeGroup.add(foliage1);
+        treeGroup.add(foliage2);
+        treeGroup.add(foliage3);
+
+        treeGroup.position.set(x, 0, z);
+
+        // Add some random rotation and scale variation
+        treeGroup.rotation.y = Math.random() * Math.PI * 2;
+        const scale = 0.8 + Math.random() * 0.4;
+        treeGroup.scale.set(scale, scale, scale);
+
+        return treeGroup;
+      }
+
+      // Add trees to Earth campus
+      function addTreesToEarth() {
+        const env = environments.earth;
+        const gridSize = env.gridSize / env.gridDivisions;
+
+        // Create trees in a somewhat random pattern
+        for (let i = 0; i < 80; i++) {
+          const x = (Math.random() - 0.5) * env.gridSize * 0.9;
+          const z = (Math.random() - 0.5) * env.gridSize * 0.9;
+
+          // Snap trees to grid cells to make clearing easier
+          const snappedX = Math.round(x / gridSize) * gridSize;
+          const snappedZ = Math.round(z / gridSize) * gridSize;
+
+          // Add some offset within the grid cell for natural look
+          const offsetX = (Math.random() - 0.5) * gridSize * 0.3;
+          const offsetZ = (Math.random() - 0.5) * gridSize * 0.3;
+
+          const tree = createTreeMesh(snappedX + offsetX, snappedZ + offsetZ);
+          tree.userData = {
+            gridX: snappedX,
+            gridZ: snappedZ,
+            isTree: true,
+          };
+
+          scene.add(tree);
+          placedTrees.push(tree);
+        }
+      }
+
+      // Clear trees in building area
+      function clearTreesInArea(building) {
+        const buildingBox = new THREE.Box3().setFromObject(building);
+        // Expand the box slightly to clear trees around the building
+        buildingBox.expandByScalar(1);
+
+        placedTrees = placedTrees.filter((tree) => {
+          const treePos = new THREE.Vector3();
+          tree.getWorldPosition(treePos);
+
+          if (buildingBox.containsPoint(treePos)) {
+            scene.remove(tree);
+            return false;
+          }
+          return true;
+        });
+      }
+
+      // Create building label
+      function createBuildingLabel(text) {
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = 256;
+        canvas.height = 64;
+
+        // Draw background
+        context.fillStyle = "rgba(27, 42, 73, 0.9)";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw border
+        context.strokeStyle = "#37B3A9";
+        context.lineWidth = 2;
+        context.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+        // Draw text
+        context.fillStyle = "#F5F7FA";
+        context.font = "bold 24px Arial";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        // Create texture and sprite
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+        });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(4, 1, 1);
+
+        return sprite;
+      }
+
+      // Create starfield for space environments
+      function createStarfield() {
+        // Remove any existing stars first
+        const existingStars = scene.children.filter(
+          (child) =>
+            child instanceof THREE.Points &&
+            child.material.color.getHex() === 0xffffff
+        );
+        existingStars.forEach((stars) => scene.remove(stars));
+
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 0.5,
+          sizeAttenuation: false,
+        });
+
+        const starsVertices = [];
+        for (let i = 0; i < 10000; i++) {
+          const x = (Math.random() - 0.5) * 2000;
+          const y = (Math.random() - 0.5) * 2000;
+          const z = (Math.random() - 0.5) * 2000;
+          starsVertices.push(x, y, z);
+        }
+
+        starsGeometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(starsVertices, 3)
+        );
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+      }
+
+      // Update building palette based on location
+      function updateBuildingPalette() {
+        const buildingList = document.getElementById("building-list");
+        buildingList.innerHTML = "";
+
+        const buildings = buildingTypes[currentLocation];
+        buildings.forEach((building) => {
+          const item = document.createElement("div");
+          item.className = "building-item";
+          item.dataset.buildingId = building.id;
+          item.innerHTML = `
+                  <div class="building-name">${building.name}</div>
+                  <div class="building-desc">${building.desc}</div>
+              `;
+          item.addEventListener("click", () => selectBuilding(building));
+          buildingList.appendChild(item);
+        });
+      }
+
+      // Select a building type
+      function selectBuilding(buildingType) {
+        selectedBuildingType = buildingType;
+        deleteMode = false;
+        document.getElementById("delete-btn").classList.remove("danger");
+
+        // Create ghost building
+        if (ghostBuilding) {
+          scene.remove(ghostBuilding);
+        }
+
+        ghostBuilding = createBuildingMesh(buildingType, true);
+        scene.add(ghostBuilding);
+      }
+
+      // Create building mesh
+      function createBuildingMesh(buildingType, isGhost = false) {
+        const group = new THREE.Group();
+
+        const geometry = new THREE.BoxGeometry(
+          buildingType.size * 0.9,
+          buildingType.size * 0.5 + Math.random() * 2,
+          buildingType.size * 0.9
+        );
+
+        const material = new THREE.MeshPhongMaterial({
+          color: isGhost ? 0x37b3a9 : getBuildingColor(buildingType.id),
+          transparent: isGhost,
+          opacity: isGhost ? 0.5 : 1,
+          emissive: isGhost ? 0x37b3a9 : 0x000000,
+          emissiveIntensity: isGhost ? 0.3 : 0,
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        // Position the building
+        mesh.position.y = mesh.geometry.parameters.height / 2;
+        group.add(mesh);
+
+        // Add label if not ghost
+        if (!isGhost) {
+          const label = createBuildingLabel(buildingType.name);
+          label.position.y = mesh.geometry.parameters.height + 1.5;
+          group.add(label);
+        }
+
+        group.userData = { ...buildingType, isGhost, mesh: mesh };
+
+        return group;
+      }
+
+      // Get building color based on type
+      function getBuildingColor(buildingId) {
+        const colors = {
+          admin: 0x1b2a49,
+          launch: 0xe74c3c,
+          research: 0x3498db,
+          habitat: 0x2ecc71,
+          power: 0xf39c12,
+          comms: 0x9b59b6,
+          hangar: 0x34495e,
+          storage: 0x7f8c8d,
+          greenhouse: 0x27ae60,
+          solar: 0xf1c40f,
+          training: 0xe67e22,
+          medical: 0xe74c3c,
+          engineering: 0x95a5a6,
+          observatory: 0x8e44ad,
+          command: 0x2c3e50,
+          docking: 0x16a085,
+          colony: 0xd35400,
+          mining_rig: 0x7f8c8d,
+          refinery: 0xc0392b,
+        };
+        return colors[buildingId] || 0x34495e;
+      }
+
+      // Setup event listeners
+      function setupEventListeners() {
+        // Mouse move
+        document.addEventListener("mousemove", onMouseMove);
+
+        // Mouse click
+        document.addEventListener("click", onMouseClick);
+
+        // Keyboard
+        document.addEventListener("keydown", onKeyDown);
+
+        // Mouse wheel for zoom
+        document.addEventListener("wheel", onMouseWheel);
+
+        // Mouse drag for rotation
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        document.addEventListener("mousedown", (e) => {
+          if (e.button === 2) {
+            // Right click
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+          }
+        });
+
+        document.addEventListener("mouseup", () => {
+          isDragging = false;
+        });
+
+        document.addEventListener("mousemove", (e) => {
+          if (isDragging) {
+            const deltaMove = {
+              x: e.clientX - previousMousePosition.x,
+              y: e.clientY - previousMousePosition.y,
+            };
+
+            controls.rotationY += deltaMove.x * 0.01;
+            controls.rotationX += deltaMove.y * 0.01;
+            controls.rotationX = Math.max(
+              -Math.PI / 3,
+              Math.min(0, controls.rotationX)
+            );
+            controls.update();
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+          }
+        });
+
+        // Prevent context menu on right click
+        document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+        // Window resize
+        window.addEventListener("resize", onWindowResize);
+
+        // Location buttons
+        document.querySelectorAll(".location-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const location = e.target.dataset.location;
+            switchLocation(location);
+          });
+        });
+
+        // Control buttons
+        document
+          .getElementById("rotate-btn")
+          .addEventListener("click", rotateBuilding);
+        document
+          .getElementById("delete-btn")
+          .addEventListener("click", toggleDeleteMode);
+        document
+          .getElementById("grid-toggle")
+          .addEventListener("click", toggleGrid);
+        document
+          .getElementById("reset-camera")
+          .addEventListener("click", resetCamera);
+      }
+
+      // Mouse move handler
+      function onMouseMove(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        if (ghostBuilding && !deleteMode) {
+          updateGhostPosition();
+        }
+      }
+
+      // Update ghost building position
+      function updateGhostPosition() {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(ground);
+
+        if (intersects.length > 0) {
+          const point = intersects[0].point;
+          const env = environments[currentLocation];
+          const gridSize = env.gridSize / env.gridDivisions;
+
+          // Snap to grid - ensure perfect alignment
+          const snappedX = Math.round(point.x / gridSize) * gridSize;
+          const snappedZ = Math.round(point.z / gridSize) * gridSize;
+
+          ghostBuilding.position.x = snappedX;
+          ghostBuilding.position.z = snappedZ;
+
+          // Check for collisions
+          const hasCollision = checkCollision(ghostBuilding);
+          const mesh = ghostBuilding.children[0]; // Get the mesh from the group
+          mesh.material.color.setHex(hasCollision ? 0xe74c3c : 0x37b3a9);
+          mesh.material.emissive.setHex(hasCollision ? 0xe74c3c : 0x37b3a9);
+        }
+      }
+
+      // Check for building collisions
+      function checkCollision(building) {
+        const box1 = new THREE.Box3().setFromObject(building);
+
+        for (let placedBuilding of placedBuildings) {
+          const box2 = new THREE.Box3().setFromObject(placedBuilding);
+          if (box1.intersectsBox(box2)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Mouse click handler
+      function onMouseClick(event) {
+        // Don't process clicks on UI elements
+        if (event.target.tagName !== "CANVAS") return;
+
+        if (deleteMode) {
+          deleteBuilding();
+        } else if (ghostBuilding && selectedBuildingType) {
+          placeBuilding();
+        } else if (!ghostBuilding) {
+          // Check for building selection
+          selectBuildingAtMouse();
+        }
+      }
+
+      // Select building at mouse position
+      function selectBuildingAtMouse() {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(
+          placedBuildings.map((b) => b.children[0])
+        ); // Get meshes from groups
+
+        if (intersects.length > 0) {
+          const clickedBuilding = intersects[0].object.parent; // Get the group
+          selectBuilding(clickedBuilding);
+        } else {
+          deselectBuilding();
+        }
+      }
+
+      // Select a building
+      function selectBuilding(building) {
+        // Deselect previous building
+        deselectBuilding();
+
+        selectedBuilding = building;
+
+        // Create selection outline
+        const mesh = building.children[0];
+        const outlineGeometry = new THREE.BoxGeometry(
+          mesh.geometry.parameters.width * 1.1,
+          mesh.geometry.parameters.height * 1.1,
+          mesh.geometry.parameters.depth * 1.1
+        );
+        const outlineMaterial = new THREE.MeshBasicMaterial({
+          color: 0xf2c94c,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.8,
+        });
+        selectionOutline = new THREE.Mesh(outlineGeometry, outlineMaterial);
+        selectionOutline.position.copy(mesh.position);
+        building.add(selectionOutline);
+
+        // Show building menu
+        showBuildingMenu(building);
+      }
+
+      // Deselect building
+      function deselectBuilding() {
+        if (selectedBuilding && selectionOutline) {
+          selectedBuilding.remove(selectionOutline);
+          selectionOutline = null;
+          selectedBuilding = null;
+        }
+        document.getElementById("building-menu").style.display = "none";
+      }
+
+      // Show building menu
+      function showBuildingMenu(building) {
+        const menu = document.getElementById("building-menu");
+        const nameElement = document.getElementById("selected-building-name");
+        const infoElement = document.getElementById("building-info");
+        const optionsElement = document.getElementById("menu-options");
+
+        // Set building name
+        nameElement.textContent = building.userData.name;
+
+        // Show building info
+        infoElement.innerHTML = `
+              <div class="building-info-row">
+                  <span class="building-info-label">Type:</span>
+                  <span class="building-info-value">${
+                    building.userData.name
+                  }</span>
+              </div>
+              <div class="building-info-row">
+                  <span class="building-info-label">Power:</span>
+                  <span class="building-info-value">${
+                    building.userData.power > 0 ? "+" : ""
+                  }${building.userData.power} MW</span>
+              </div>
+              <div class="building-info-row">
+                  <span class="building-info-label">Capacity:</span>
+                  <span class="building-info-value">${
+                    building.userData.capacity
+                  } people</span>
+              </div>
+              <div class="building-info-row">
+                  <span class="building-info-label">Status:</span>
+                  <span class="building-info-value">Operational</span>
+              </div>
+          `;
+
+        // Show menu options
+        const options = getBuildingMenuOptions(building.userData.id);
+        optionsElement.innerHTML = "";
+
+        options.forEach((option) => {
+          const optionElement = document.createElement("div");
+          optionElement.className = "menu-option";
+          optionElement.innerHTML = `
+                  <div class="menu-option-title">${option.title}</div>
+                  <div class="menu-option-desc">${option.desc}</div>
+              `;
+          optionElement.addEventListener("click", () =>
+            handleMenuOption(building, option)
+          );
+          optionsElement.appendChild(optionElement);
+        });
+
+        menu.style.display = "block";
+      }
+
+      // Handle menu option click
+      function handleMenuOption(building, option) {
+        console.log(`Selected ${option.title} for ${building.userData.name}`);
+
+        // Here you would implement the actual functionality for each option
+        // For now, just show an alert
+        alert(
+          `${option.title} selected for ${
+            building.userData.name
+          }\n\nThis would open the ${option.desc.toLowerCase()} interface.`
+        );
+      }
+
+      // Close menu
+      function closeMenu() {
+        deselectBuilding();
+      }
+
+      // Place building
+      function placeBuilding() {
+        if (!checkCollision(ghostBuilding)) {
+          const building = createBuildingMesh(selectedBuildingType);
+          building.position.copy(ghostBuilding.position);
+          building.rotation.copy(ghostBuilding.rotation);
+
+          scene.add(building);
+          placedBuildings.push(building);
+
+          // Clear trees in the building area (Earth only)
+          if (currentLocation === "earth") {
+            clearTreesInArea(building);
+          }
+
+          updateStats();
+
+          // Keep ghost for continuous placement
+          updateGhostPosition();
+        }
+      }
+
+      // Delete building
+      function deleteBuilding() {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(placedBuildings);
+
+        if (intersects.length > 0) {
+          const building = intersects[0].object;
+          scene.remove(building);
+          placedBuildings = placedBuildings.filter((b) => b !== building);
+          updateStats();
+        }
+      }
+
+      // Update statistics
+      function updateStats() {
+        let totalPower = 0;
+        let totalPopulation = 0;
+
+        placedBuildings.forEach((building) => {
+          totalPower += building.userData.power || 0;
+          totalPopulation += building.userData.capacity || 0;
+        });
+
+        document.getElementById("building-count").textContent =
+          placedBuildings.length;
+        document.getElementById("power-usage").textContent = `${totalPower} MW`;
+        document.getElementById("population").textContent = totalPopulation;
+      }
+
+      // Keyboard controls
+      function onKeyDown(event) {
+        switch (event.key.toLowerCase()) {
+          case "r":
+            rotateBuilding();
+            break;
+          case "d":
+            toggleDeleteMode();
+            break;
+          case "g":
+            toggleGrid();
+            break;
+          case "escape":
+            deselectBuilding();
+            break;
+        }
+      }
+
+      // Rotate building
+      function rotateBuilding() {
+        if (ghostBuilding) {
+          ghostBuilding.rotation.y += Math.PI / 2;
+        }
+      }
+
+      // Toggle delete mode
+      function toggleDeleteMode() {
+        deleteMode = !deleteMode;
+        const btn = document.getElementById("delete-btn");
+
+        if (deleteMode) {
+          btn.classList.add("danger");
+          if (ghostBuilding) {
+            scene.remove(ghostBuilding);
+            ghostBuilding = null;
+          }
+          selectedBuildingType = null;
+        } else {
+          btn.classList.remove("danger");
+        }
+      }
+
+      // Toggle grid
+      function toggleGrid() {
+        showGrid = !showGrid;
+        gridHelper.visible = showGrid;
+        document
+          .getElementById("grid-toggle")
+          .classList.toggle("active", showGrid);
+      }
+
+      // Reset camera
+      function resetCamera() {
+        controls.rotationX = -Math.PI / 6;
+        controls.rotationY = 0;
+        controls.distance = environments[currentLocation].cameraDistance;
+        controls.update();
+      }
+
+      // Mouse wheel zoom
+      function onMouseWheel(event) {
+        controls.distance += event.deltaY * 0.05;
+        controls.distance = Math.max(20, Math.min(100, controls.distance));
+        controls.update();
+      }
+
+      // Window resize
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // Switch location
+      function switchLocation(location) {
+        currentLocation = location;
+
+        // Update active button
+        document.querySelectorAll(".location-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.location === location);
+        });
+
+        // Clear buildings and trees
+        placedBuildings.forEach((building) => scene.remove(building));
+        placedBuildings = [];
+
+        placedTrees.forEach((tree) => scene.remove(tree));
+        placedTrees = [];
+
+        if (ghostBuilding) {
+          scene.remove(ghostBuilding);
+          ghostBuilding = null;
+        }
+
+        selectedBuildingType = null;
+        deleteMode = false;
+
+        // Update environment
+        createEnvironment(location);
+        updateBuildingPalette();
+        updateStats();
+
+        // Add trees if Earth
+        if (location === "earth") {
+          addTreesToEarth();
+        }
+      }
+
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Rotate space station slowly
+        if (currentLocation === "station" && ground) {
+          ground.rotation.z += 0.001;
+        }
+
+        // Animate selection outline
+        if (selectionOutline) {
+          selectionOutline.rotation.y += 0.02;
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      // Initialize on load
+      window.addEventListener("load", init);
+    </script>
+  </body>
+</html>
