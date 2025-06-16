@@ -9,6 +9,15 @@ class BuildingSystem {
     addBuilding(building) {
         this.placedBuildings.push(building);
         this.game.uiManager.infoPanel.updateStats(this.placedBuildings);
+
+        // Switch to Select Mode
+        this.game.setMode(CONSTANTS.MODES.SELECT);
+
+        // Select the newly added building
+        this.game.selectionSystem.selectBuilding(building);
+
+        // Update UI to reflect mode change
+        this.game.uiManager.updateModeButtons(CONSTANTS.MODES.SELECT);
     }
 
     removeBuilding(building) {
@@ -24,6 +33,8 @@ class BuildingSystem {
         this.placedBuildings.forEach(building => this.game.sceneManager.remove(building));
         this.placedBuildings = [];
         this.game.uiManager.infoPanel.updateStats(this.placedBuildings);
+        this.game.setMode(CONSTANTS.MODES.SELECT);
+        this.game.selectionSystem.selectBuilding(building);
     }
 
     toggleDeleteMode() {

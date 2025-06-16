@@ -18,6 +18,13 @@ class UIManager {
                 this.game.setMode(mode);
             });
         });
+        this.updateModeButtons(this.game.currentMode); // Initialize mode buttons
+    }
+
+    updateModeButtons(currentMode) {
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === currentMode);
+        });
     }
 
     setupControlButtons() {
