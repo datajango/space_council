@@ -13,9 +13,7 @@ const CONSTANTS = {
         GROUND_ASTEROID: 0x4a4a4a,
         GROUND_STATION: 0x1a1a2e,
         SKY_EARTH: 0x87ceeb,
-        SKY_MARS: 0x4a2c2a,
-        TREE_TRUNK: 0x8B4513,
-        TREE_FOLIAGE: 0x228B22
+        SKY_MARS: 0x4a2c2a
     },
 
     KEYS: {
@@ -29,6 +27,7 @@ const CONSTANTS = {
         LEFT: 0,
         RIGHT: 2
     },
+
     MODES: {
         SELECT: 'select',
         ADD: 'add'

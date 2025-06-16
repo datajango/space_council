@@ -80,7 +80,68 @@ class Environment {
         const env = ENVIRONMENTS.earth;
         const gridSize = env.gridSize / env.gridDivisions;
 
-        for (let i = 0; i < 80; i++) {
+        // Create different density zones for more natural distribution
+        const zones = [
+            { density: 0.9, radius: env.gridSize * 0.35, count: 100 }, // Dense forest area - INCREASED RADIUS & COUNT
+            { density: 0.7, radius: env.gridSize * 0.45, count: 80 }, // Medium density
+            { density: 0.5, radius: env.gridSize * 0.5, count: 10 }  // Sparse outer area
+        ];
+
+        zones.forEach(zone => {
+            for (let i = 0; i < zone.count; i++) {
+                // Generate position within zone
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * zone.radius;
+                const x = Math.cos(angle) * distance;
+                const z = Math.sin(angle) * distance;
+
+                // Add some clustering - trees tend to grow near each other
+                const clusterSize = Math.random() < 0.5 ? Math.floor(Math.random() * 5) + 1 : 0;
+
+                for (let j = 0; j <= clusterSize; j++) {
+                    const clusterX = x + (Math.random() - 0.5) * gridSize * 1.5;
+                    const clusterZ = z + (Math.random() - 0.5) * gridSize * 1.5;
+
+                    // Keep within bounds
+                    if (Math.abs(clusterX) > env.gridSize * 0.45 ||
+                        Math.abs(clusterZ) > env.gridSize * 0.45) continue;
+
+                    // Snap to grid with offset
+                    const snappedX = Math.round(clusterX / gridSize) * gridSize;
+                    const snappedZ = Math.round(clusterZ / gridSize) * gridSize;
+
+                    const offsetX = (Math.random() - 0.5) * gridSize * 0.3;
+                    const offsetZ = (Math.random() - 0.5) * gridSize * 0.3;
+
+                    // Check if position is too close to existing trees (prevent overlap)
+                    const finalX = snappedX + offsetX;
+                    const finalZ = snappedZ + offsetZ;
+
+                    let tooClose = false;
+                    for (let tree of this.trees) {
+                        const dx = tree.position.x - finalX;
+                        const dz = tree.position.z - finalZ;
+                        if (Math.sqrt(dx * dx + dz * dz) < 0.5) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+
+                    if (!tooClose && Math.random() < zone.density) {
+                        const tree = Tree.createMesh(finalX, finalZ);
+                        tree.userData.gridX = snappedX;
+                        tree.userData.gridZ = snappedZ;
+                        tree.userData.isTree = true;
+
+                        this.sceneManager.add(tree);
+                        this.trees.push(tree);
+                    }
+                }
+            }
+        });
+
+        // Add some scattered individual trees
+        for (let i = 0; i < 40; i++) {
             const x = (Math.random() - 0.5) * env.gridSize * 0.9;
             const z = (Math.random() - 0.5) * env.gridSize * 0.9;
 
@@ -91,15 +152,15 @@ class Environment {
             const offsetZ = (Math.random() - 0.5) * gridSize * 0.3;
 
             const tree = Tree.createMesh(snappedX + offsetX, snappedZ + offsetZ);
-            tree.userData = {
-                gridX: snappedX,
-                gridZ: snappedZ,
-                isTree: true
-            };
+            tree.userData.gridX = snappedX;
+            tree.userData.gridZ = snappedZ;
+            tree.userData.isTree = true;
 
             this.sceneManager.add(tree);
             this.trees.push(tree);
         }
+
+        console.log(`Created ${this.trees.length} trees with variety`);
     }
 
     clearTrees() {
